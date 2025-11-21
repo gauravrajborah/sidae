@@ -2721,23 +2721,20 @@ def main() -> None:
     application = Application.builder().token(BOT_TOKEN).build()
 
     # --- Register Handlers ---
-    
+
     # AI Chatbot Command (Updated to handle multimodal and context)
     application.add_handler(CommandHandler("ask", ask_ai))
     application.add_handler(CommandHandler("img", generate_image_command))
     application.add_handler(CommandHandler("set_personality", set_ai_personality))
 
-
     # Public/Utility Commands
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("id", get_user_id))
-    application.add_handler(CommandHandler("purge", purge_messages)) 
+    application.add_handler(CommandHandler("purge", purge_messages))
     application.add_handler(CommandHandler("stats", stats))
     application.add_handler(CommandHandler("weather", weather))
     application.add_handler(CommandHandler("time", get_current_time))
     application.add_handler(CommandHandler("help", help_command))
-
-
 
     # Countdown Commands
     application.add_handler(CommandHandler("set_countdown", set_countdown))
@@ -2752,4 +2749,70 @@ def main() -> None:
     application.add_handler(CommandHandler("removewarn", remove_warn))
     application.add_handler(CommandHandler("warns", warn_counts))
     application.add_handler(CommandHandler("ban", ban_user))
-    application.add_handler(CommandHandler("un
+    application.add_handler(CommandHandler("unban", unban_user))
+    application.add_handler(CommandHandler("mute", mute_user))
+    application.add_handler(CommandHandler("unmute", unmute_user))
+    application.add_handler(CommandHandler("admin", mention_admins))
+    application.add_handler(CommandHandler("promote", promote_user))
+
+    # Lock / Unlock features
+    application.add_handler(CommandHandler("lock", lock_feature))
+    application.add_handler(CommandHandler("unlock", unlock_feature))
+
+    # Banned word management
+    application.add_handler(CommandHandler("ban_word", ban_word))
+    application.add_handler(CommandHandler("unban_word", unban_word))
+
+    # Filter management
+    application.add_handler(CommandHandler("filter", set_filter))
+    application.add_handler(CommandHandler("stop", stop_filter))
+
+    # Welcome message / broadcast / owner-only
+    application.add_handler(CommandHandler("set_welcome", set_welcome_message))
+    application.add_handler(CommandHandler("enable_welcome", enable_welcome))
+    application.add_handler(CommandHandler("disable_welcome", disable_welcome))
+
+    # NCERT Quiz / Chapter management
+    application.add_handler(CommandHandler("save_chapter", save_chapter))
+    application.add_handler(CommandHandler("quiz", start_quiz))
+    application.add_handler(CommandHandler("change_timing", change_quiz_timing))
+
+    # Owner commands
+    application.add_handler(CommandHandler("broadcast", broadcast_message))
+    application.add_handler(CommandHandler("freeze", freeze_bot))
+    application.add_handler(CommandHandler("resume", resume_bot))
+    application.add_handler(CommandHandler("list_chats", list_chats))
+    application.add_handler(CommandHandler("deny", deny))
+    application.add_handler(CommandHandler("allow", allow))
+
+    # Poll / Quiz handlers
+    # Collect poll answers (used for quiz ranking). PollAnswerHandler handles PollAnswer updates.
+    application.add_handler(PollAnswerHandler(handle_quiz_answer))
+
+    # Message handlers (non-command):
+    # 1) Banned words should be checked early
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_banned_words), group=0)
+    # 2) Filters (auto-replies) next
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_filters), group=1)
+    # 3) Link message moderation - we register for all messages because links can be in captions, entities, etc.
+    application.add_handler(MessageHandler(filters.ALL, handle_link_messages), group=2)
+
+    # New chat members (welcome)
+    application.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, handle_new_member))
+
+    # Start webhook (suitable for hosting on platforms that require webhooks)
+    try:
+        # The Application.run_webhook will block and run the webhook server.
+        # It listens on 0.0.0.0 by default; explicitly provide the PORT and WEBHOOK_URL.
+        logger.info("Starting webhook...")
+        application.run_webhook(
+            listen="0.0.0.0",
+            port=PORT,
+            webhook_url=WEBHOOK_URL,
+        )
+    except Exception as e:
+        logger.exception(f"Failed to start webhook: {e}")
+
+
+if __name__ == "__main__":
+    main()
